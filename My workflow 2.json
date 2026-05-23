@@ -1,0 +1,524 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "b7659a69-4950-4126-a764-88ff09e39554",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE",
+          "mode": "list",
+          "cachedResultName": "app_dataset",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1305895928,
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE/edit#gid=1305895928"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "bbff3ed4-5239-4e5d-b24b-72a7345edd68",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yDj9nzWZPFSlgLJn",
+          "name": "test1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const DAY_MS = 24 * 60 * 60 * 1000;\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\n// --- Universal date parser ---\n// Handles both DD-MM-YYYY and YYYY-MM-DD\nfunction parseDate(val) {\n  if (!val) return null;\n  const str = String(val).trim();\n\n  // YYYY-MM-DD\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(str)) {\n    const [y, m, d] = str.split('-').map(Number);\n    return new Date(y, m - 1, d);\n  }\n\n  // DD-MM-YYYY\n  if (/^\\d{2}-\\d{2}-\\d{4}$/.test(str)) {\n    const [d, m, y] = str.split('-').map(Number);\n    return new Date(y, m - 1, d);\n  }\n\n  return null;\n}\n\n// --- Number parser: handles \"120,000\" and 120000 ---\nfunction parseNum(val) {\n  return Number(String(val).replace(/,/g, '').trim());\n}\n\nreturn $input.all().map(item => {\n  const data = item.json;\n\n  // --- Parse dates ---\n  const startDate    = parseDate(data.start_date);\n  const lastActivity = parseDate(data.last_activity_date);\n\n  // --- Guard: skip broken rows ---\n  if (!startDate || !lastActivity || isNaN(startDate) || isNaN(lastActivity)) {\n    item.json.status             = 'Data Error';\n    item.json.error_reason       = `Bad dates — start: ${data.start_date} | last: ${data.last_activity_date}`;\n    item.json.go_live_probability = 0;\n    item.json.updated_at         = today.toISOString();\n    return item;\n  }\n\n  // --- Parse numbers ---\n  const totalSteps     = parseNum(data.total_steps);\n  const stepsCompleted = parseNum(data.steps_completed);\n\n  if (!totalSteps || totalSteps === 0) {\n    item.json.status       = 'Data Error';\n    item.json.error_reason = 'total_steps is 0 or missing';\n    return item;\n  }\n\n  // --- Timeline ---\n  const daysSinceStart     = Math.floor((today - startDate) / DAY_MS);\n  const daysLeft           = Math.max(60 - daysSinceStart, 0);\n\n  // --- Progress ---\n  const completionPct      = (stepsCompleted / totalSteps) * 100;\n  const expectedPct        = Math.min((daysSinceStart / 60) * 100, 100);\n  const paceDelta          = completionPct - expectedPct;\n\n  // --- Activity ---\n  const hoursSinceActivity = (today - lastActivity) / (1000 * 60 * 60);\n\n  // --- Status ---\n  let status = 'On Track';\n  if (hoursSinceActivity > 120 || paceDelta < -40) {\n    status = 'Stalled';\n  } else if (hoursSinceActivity > 72 || paceDelta < -15) {\n    status = 'At Risk';\n  }\n\n  // --- Go-live probability ---\n  let goLiveProbability = 70 + (paceDelta * 1.2);\n  if (status === 'At Risk')  goLiveProbability -= 10;\n  if (status === 'Stalled')  goLiveProbability -= 25;\n  goLiveProbability = Math.max(0, Math.min(100, Math.round(goLiveProbability)));\n\n  // --- Write back ---\n  item.json.days_since_start     = daysSinceStart;\n  item.json.days_left            = daysLeft;\n  item.json.completion_pct       = Math.round(completionPct);\n  item.json.expected_pct         = Math.round(expectedPct);\n  item.json.pace_delta           = Math.round(paceDelta);\n  item.json.hours_since_activity = Math.round(hoursSinceActivity);\n  item.json.go_live_probability  = goLiveProbability;\n  item.json.status               = status;\n  item.json.updated_at           = today.toISOString();\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "dec0bd5f-d8d4-4831-af28-cb1c79d5f9b4",
+      "name": "Calculate Client Health"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.status}}",
+                    "rightValue": "On Track",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "15ab73b7-d45c-42ad-8008-6147a8151660"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4a022858-6458-4d63-b606-ccf17a2aef18",
+                    "leftValue": "={{$json.status}}",
+                    "rightValue": "At Risk",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0293bda5-808e-4261-84c2-081e88b35292",
+                    "leftValue": "={{$json.status}}",
+                    "rightValue": "Stalled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        16
+      ],
+      "id": "26adacd3-e0b4-43d1-aef7-8d180101dac3",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "chnaman13@gmail.com",
+        "subject": "=⚠️ Onboarding Risk Alert",
+        "emailType": "text",
+        "message": "={{ $json.client_name }} s currently marked as \"At Risk\".\n\nCurrent onboarding progress:\n- Day {{$json.days_since_start}} of 60\n- Completion: {{$json.completion_pct}}%\n- Expected Progress: {{$json.expected_pct}}%\n- Current Stage: {{$json.current_stuck_step}}\n\nThe client may miss the planned go-live timeline if progress does not improve.\n\nRecommended Action:\nPlease follow up with the client and unblock pending onboarding steps.\n\nThanks,",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        32
+      ],
+      "id": "2e82e639-a42a-4e43-9747-c677ecfa314d",
+      "name": "Send a message",
+      "webhookId": "955df88f-aab7-4c9f-8376-37c1e572369b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "77cfAfaQplX5uovx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B5DH10C05",
+          "mode": "list",
+          "cachedResultName": "all-n8ntest"
+        },
+        "text": "={{$json.client_name}} is stalled.  • Day {{$json.days_since_start}} of 60 • Completion: {{$json.completion_pct}}% • Current Stage: {{$json.current_stuck_step}} • Go-live Probability: {{$json.go_live_probability}}%  Needs immediate attention from {{$json.account_manager}}.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        400,
+        208
+      ],
+      "id": "8dbbef54-d207-4a03-8f27-13815816b314",
+      "name": "Send a message1",
+      "webhookId": "a94be261-8144-40e6-81ff-e4b5fd2db407",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "CAe3BmZSBzA89Bp5",
+          "name": "n8n Test1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE",
+          "mode": "list",
+          "cachedResultName": "app_dataset",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 638072957,
+          "mode": "list",
+          "cachedResultName": "dashboard_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fBvW2UhRRkXVk5THJ5p_S5OOl8xqxxo_8TGkJ5J54gE/edit#gid=638072957"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_id",
+              "displayName": "client_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days_since_start",
+              "displayName": "days_since_start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days_left",
+              "displayName": "days_left",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "completion_pct",
+              "displayName": "completion_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expected_pct",
+              "displayName": "expected_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pace_delta",
+              "displayName": "pace_delta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "go_live_probability",
+              "displayName": "go_live_probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_stuck_step",
+              "displayName": "current_stuck_step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "account_manager",
+              "displayName": "account_manager",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hours_since_activity",
+              "displayName": "hours_since_activity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "start_date",
+              "displayName": "start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total_steps",
+              "displayName": "total_steps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "steps_completed",
+              "displayName": "steps_completed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_activity_date",
+              "displayName": "last_activity_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contract_value_usd",
+              "displayName": "contract_value_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        -208
+      ],
+      "id": "fc2c1391-ece6-41cf-9171-bf2b4cbe4062",
+      "name": "dashboard_data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yDj9nzWZPFSlgLJn",
+          "name": "test1"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Calculate Client Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Client Health": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "dashboard_data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "0527a1f5-cad1-4391-aaab-4399313f139f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "502391bc30857a7a2564d13bca0202ac455ba761714c8891fd33b20ee9a9cdc8"
+  },
+  "id": "_VS4shIbia6_ahocZfXog",
+  "tags": []
+}
