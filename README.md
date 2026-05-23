@@ -66,8 +66,7 @@ Across 20 mock enterprise clients spanning Banking, Healthcare, E-commerce, Logi
 
 - **10 of 20 clients stalled** before reaching go-live
 - **Average go-live probability: 47.95%** — below the halfway mark
-- **API Key Setup and SSO Configuration** tied as the #1 bottleneck — 3 clients stuck on each
-- **$1.27M in contract value at risk** across stalled and at-risk clients
+
 
 The insight that matters: when two completely different clients from different industries get stuck on the same step — that's not a client problem. That's a product problem. Fixing the UX of those two steps would immediately unblock 30% of all active clients.
 
