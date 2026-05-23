@@ -1,0 +1,21 @@
+client_id,client_name,industry,country,start_date,total_steps,steps_completed,current_stuck_step,last_activity_date,account_manager,contract_value_usd,is_active
+C001,FinanceCorpX,Banking,India,22-03-2026,12,5,API Key Setup,2026-05-20,Rohan,"120,000",TRUE
+C002,RetailBrandY,E-commerce,UAE,01-04-2026,12,9,User Training,2026-05-21,Priya,"85,000",TRUE
+C003,LogisticsCo,Supply Chain,USA,10-04-2026,12,3,SSO Configuration,2026-05-10,Rohan,"200,000",TRUE
+C004,TelecomGiant,Telecom,India,15-04-2026,12,7,Workflow Mapping,2026-05-18,Arjun,"175,000",TRUE
+C005,HealthNetPro,Healthcare,UK,20-04-2026,12,10,Final UAT Sign-off,2026-05-22,Priya,"95,000",TRUE
+C006,ManufactureX,Manufacturing,Germany,25-04-2026,12,2,Data Source Connection,2026-05-05,Arjun,"150,000",TRUE
+C007,InsurePlus,Insurance,India,01-05-2026,12,6,Integration Testing,2026-05-21,Rohan,"110,000",TRUE
+C008,EduTechNow,EdTech,Singapore,05-05-2026,12,4,CRM Connector Setup,2026-05-17,Priya,"60,000",TRUE
+C009,NeoBank Arabia,Banking,Saudi Arabia,05-04-2026,12,8,Admin Configuration,2026-05-20,Arjun,"210,000",TRUE
+C010,SwiftShip Inc,Logistics,Netherlands,08-04-2026,12,4,API Key Setup,2026-05-11,Rohan,"135,000",TRUE
+C011,MediCare Plus,Healthcare,Australia,12-04-2026,12,9,Final UAT Sign-off,2026-05-22,Priya,"180,000",TRUE
+C012,CloudRetail Co,E-commerce,Canada,18-04-2026,12,5,Integration Testing,2026-05-18,Arjun,"90,000",TRUE
+C013,GreenEnergy Ltd,Energy,Germany,22-04-2026,12,2,SSO Configuration,2026-05-06,Rohan,"250,000",TRUE
+C014,UrbanMobility,Transport,India,28-04-2026,12,7,Workflow Mapping,2026-05-21,Priya,"140,000",TRUE
+C015,SecureVault,Cybersecurity,Israel,02-05-2026,12,3,CRM Connector Setup,2026-05-12,Arjun,"195,000",TRUE
+C016,AgriTech Now,Agriculture,Brazil,06-05-2026,12,3,Data Source Connection,2026-05-14,Rohan,"75,000",TRUE
+C017,LegalEdge,Legal Tech,UK,08-05-2026,12,4,First Workflow Build,2026-05-19,Priya,"115,000",TRUE
+C018,PayFast Global,Fintech,Singapore,10-05-2026,12,3,API Key Setup,2026-05-15,Arjun,"160,000",TRUE
+C019,EduSpark,EdTech,India,12-05-2026,12,2,Account Provisioning,2026-05-16,Rohan,"55,000",TRUE
+C020,HealthBridge,Healthcare,USA,14-05-2026,12,2,SSO Configuration,2026-05-08,Priya,"130,000",TRUE
