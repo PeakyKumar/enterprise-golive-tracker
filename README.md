@@ -140,7 +140,6 @@ enterprise-golive-tracker/
 | current_stuck_step | Text | Step currently in progress |
 | last_activity_date | Text (YYYY-MM-DD) | Last recorded client activity |
 | account_manager | Text | Assigned AM (Rohan/Priya/Arjun) |
-| contract_value_usd | Number | Deal value in USD |
 | is_active | Boolean | Active client flag |
 
 ---
@@ -148,7 +147,7 @@ enterprise-golive-tracker/
 ## 🚀 How to Reproduce This
 
 **1. Set up Google Sheets**
-- Create a new spreadsheet with 5 tabs: `clients`, `onboarding_steps`, `dashboard_data`, `weekly_snapshot`, `alert_log`
+- Create a new spreadsheet with 2 tabs: `clients`,  `dashboard_data`
 - Import the CSV files from `/data/` into the corresponding tabs
 - Set date columns to Plain Text format — critical to prevent Google Sheets auto-conversion breaking n8n date parsing
 
